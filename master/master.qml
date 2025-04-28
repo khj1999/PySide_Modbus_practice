@@ -19,37 +19,48 @@ Window {
         TextField {
             placeholderText: "Input hex address (e.g., 0x01)"
             onTextChanged: inputAddress = text
+            width: 400
         }
 
         TextField {
             placeholderText: "Input hex values (e.g., 0x10,0x20,0x30)"
             onTextChanged: inputValue = text
+            width: 400
         }
-
 
         TextField {
             placeholderText: "Input hex count (e.g., 0x03)"
             onTextChanged: inputCount = text
+            width: 400
         }
 
-        Button {
-            text: "Read Registers (0x03)"
-            onClicked: backend.readRegisters(inputAddress, inputCount)
+        Row {
+            spacing: 10
+
+            Button {
+                text: "Read Registers (0x03)"
+                onClicked: backend.readRegisters(inputAddress, inputCount)
+            }
+
+            Button {
+                text: "Write Single Register (0x06)"
+                onClicked: backend.writeSingleRegister(inputAddress, inputValue)
+            }
+
+            Button {
+                text: "Write Multiple Registers (0x10)"
+                onClicked: backend.writeMultipleRegisters(inputAddress, inputValue)
+            }
         }
 
-        Button {
-            text: "Write Single Register (0x06)"
-            onClicked: backend.writeSingleRegister(inputAddress, inputValue)
-        }
-
-        Button {
-            text: "Write Multiple Registers (0x10)"
-            onClicked: backend.writeMultipleRegisters(inputAddress, inputValue)
-        }
-
-        Text {
-            text: "Result: " + backend.data
-            wrapMode: Text.Wrap
+        ScrollView {
+            width: 500
+            height: 200
+            Text {
+                text: backend.data
+                wrapMode: Text.Wrap
+                font.pixelSize: 16
+            }
         }
     }
 }

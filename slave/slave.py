@@ -1,4 +1,5 @@
 from pymodbus.server.sync import ModbusTcpServer
+from pymodbus.framer.socket_framer import ModbusSocketFramer
 from pymodbus.datastore import ModbusServerContext, ModbusSlaveContext
 from pymodbus.datastore import ModbusSequentialDataBlock
 import sqlite3
@@ -55,10 +56,11 @@ class DatabaseDataBlock(ModbusSequentialDataBlock):
         super().__init__(0, [0]*10)
 
     def getValues(self, address, count=1):
-        return read_registers(self.cursor, address, count)
+        return read_registers(self.cursor, address - 1, count)
 
     def setValues(self, address, values):
-        write_register(self.cursor, address, values)
+        write_register(self.cursor, address - 1, values)
+        self.cursor.connection.commit()  # DB 커밋
 
 if __name__ == "__main__":
     logging.basicConfig()
@@ -71,7 +73,7 @@ if __name__ == "__main__":
     store = ModbusSlaveContext(hr=datablock)
     context = ModbusServerContext(slaves=store, single=True)
 
-    server = ModbusTcpServer(context, address=("localhost", 5050))
+    server = ModbusTcpServer(context, address=("localhost", 5050), framer=ModbusSocketFramer)
     try:
         server.serve_forever()
     finally:
