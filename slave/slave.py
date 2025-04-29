@@ -19,7 +19,7 @@ def init_db():
         )
     """)
     # 기본 데이터 (주소 0~20)
-    for addr in range(20):
+    for addr in range(100):
         hex_addr = format_hex(addr)
         hex_val = format_hex((addr + 1) * 10)
         cursor.execute("INSERT OR IGNORE INTO holding_registers (address, value) VALUES (?, ?)", (hex_addr, hex_val))
@@ -42,25 +42,33 @@ def read_registers(cursor, address, count):
 
 # DB에 레지스터 값 쓰기
 def write_register(cursor, address, values):
+    result = []
     for offset, val in enumerate(values):
         hex_addr = format_hex(address + offset)
         hex_val = format_hex(val)
+        result.append(hex_addr + " " + hex_val)
         cursor.execute("UPDATE holding_registers SET value = ? WHERE address = ?", (hex_val, hex_addr))
-
+    return result
 
 # 커스텀 DataBlock (DB 연동)
 class DatabaseDataBlock(ModbusSequentialDataBlock):
     def __init__(self, cursor):
         self.cursor = cursor
-        # 임시 초기값 (0~4 주소)
-        super().__init__(0, [0]*10)
+        # 임시 초기값 (0~100 주소)
+        # 해당 라이브러리 자체적으로 주소를 판단하기 때문에
+        # 실제 데이터는 DB에서 직접 읽고 쓰더라도 유효성 검증을 위해 초기화 시켜줘야함
+        super().__init__(0, [0]*100)
 
+    # 오버라이드
     def getValues(self, address, count=1):
-        return read_registers(self.cursor, address - 1, count)
+        result = read_registers(self.cursor, address - 1, count)
+        print(f"getValue : {result}")
+        return result
 
     def setValues(self, address, values):
-        write_register(self.cursor, address - 1, values)
+        result = write_register(self.cursor, address - 1, values)
         self.cursor.connection.commit()  # DB 커밋
+        print(f"setValues : {result}")
 
 if __name__ == "__main__":
     logging.basicConfig()
@@ -72,6 +80,8 @@ if __name__ == "__main__":
     datablock = DatabaseDataBlock(cursor)
     store = ModbusSlaveContext(hr=datablock)
     context = ModbusServerContext(slaves=store, single=True)
+    # 슬레이브 직접 지정
+    # context = ModbusServerContext(slaves={1: store}, single=False)
 
     server = ModbusTcpServer(context, address=("localhost", 5050), framer=ModbusSocketFramer)
     try:

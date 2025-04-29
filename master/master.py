@@ -16,7 +16,7 @@ class Backend(QObject):
         super().__init__()
         self._data = ""
         # self.client = ModbusTcpClient("localhost", port=5050)
-        self.client = ModbusTcpClient("localhost", port=5050, framer=ModbusSocketFramer)
+        self.client = ModbusTcpClient("localhost", port=5050, time= 10, framer=ModbusSocketFramer)
         self.client.connect()
 
     @Property(str, notify=dataChanged)
@@ -48,8 +48,8 @@ class Backend(QObject):
             if not result.isError():
                 response_pdu = result.encode()
                 output = (
-                    f"[Request] 03 {self.parsePacket(request_pdu)}\n"
-                    f"[Response] 03 {self.parsePacket(response_pdu)}"
+                    f"[Request] {1:02X} 03 {self.parsePacket(request_pdu)}\n"
+                    f"[Response] {1:02X} 03 {self.parsePacket(response_pdu)}"
                 )
                 self.setData(output)
             else:
@@ -64,14 +64,15 @@ class Backend(QObject):
             address = int(hex_address, 16)
             value = int(hex_value, 16)
 
+            request = WriteSingleRegisterRequest(address, value)
             result = self.client.write_register(address, value, unit=1)
 
             if not result.isError():
-                request_pdu = result.request.encode()
+                request_pdu = request.encode()
                 response_pdu = result.encode()
                 output = (
-                    f"[Request] 06 {self.parsePacket(request_pdu)}\n"
-                    f"[Response] 06 {self.parsePacket(response_pdu)}"
+                    f"[Request] {1:02X} 06 {self.parsePacket(request_pdu)}\n"
+                    f"[Response] {1:02X} 06 {self.parsePacket(response_pdu)}"
                 )
                 self.setData(output)
             else:
@@ -96,8 +97,8 @@ class Backend(QObject):
             if not result.isError():
                 response_pdu = result.encode()
                 output = (
-                    f"[Request] 10 {self.parsePacket(request_pdu)}\n"
-                    f"[Response] 10 {self.parsePacket(response_pdu)}"
+                    f"[Request] {1:02X} 10 {self.parsePacket(request_pdu)}\n"
+                    f"[Response] {1:02X} 10 {self.parsePacket(response_pdu)}"
                 )
                 self.setData(output)
             else:
