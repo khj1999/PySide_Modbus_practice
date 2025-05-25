@@ -82,18 +82,15 @@ class Device(QObject):
     async def write_single(self, addr: int, val: int):
         try:
             await self.client.write_register(addr, val, slave=self.unit)
-            self.logSignal.emit(str(self.unit),
-                                f"[WRITE1] addr={addr} val={val}")
+            self.logSignal.emit(str(self.unit), f"[WRITE_SINGLE] addr={addr} val={val}")
         except Exception as e:
             self.logSignal.emit(str(self.unit), "[ERR WRITE1] " + str(e))
 
     async def write_multi(self, vals: List[int]):
         # 멀티 0x10 (주소 5~9)
         try:
-            await self.client.write_registers(
-                WRITE_START_ADDR, vals, slave=self.unit)                # addr=5
-            self.logSignal.emit(str(self.unit),
-                                "[WRITE_N] vals=" + str(vals))
+            await self.client.write_registers(WRITE_START_ADDR, vals, slave=self.unit)                # addr=5
+            self.logSignal.emit(str(self.unit), "[WRITE_N] vals=" + str(vals))
         except Exception as e:
             self.logSignal.emit(str(self.unit), "[ERR WRITE_N] " + str(e))
 
@@ -130,15 +127,15 @@ class Backend(QObject):
 
         # Unit-ID 1~3 Device 연결 객체 생성
         for unit in (1, 2, 3):
-            dev = Device(unit, client, parent=self)
-            dev.readReady.connect(self.readData)
-            dev.logSignal.connect(self.logSignal)
-            self.devices[unit] = dev
+            device = Device(unit, client, parent=self)
+            device.readReady.connect(self.readData)
+            device.logSignal.connect(self.logSignal)
+            self.devices[unit] = device
 
         self._status = "연결 완료"
         self.statusChanged.emit()
 
-        # 연결체크 함수 -> 연결 끊기면 재연결 시도
+        # 통신체크 쓰레드 실행 -> 연결 끊기면 재연결 시도
         asyncio.create_task(self._check_connection())
 
     async def _check_connection(self):
@@ -195,7 +192,8 @@ class Backend(QObject):
 # main
 def main():
     app  = QApplication(sys.argv)
-    loop = QEventLoop(app); asyncio.set_event_loop(loop)
+    loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)
 
     engine = QQmlApplicationEngine()
     backend = Backend()

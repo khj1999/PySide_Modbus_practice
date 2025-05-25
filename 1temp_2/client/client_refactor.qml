@@ -68,7 +68,7 @@ Window {
                             vals.push(v);
                         }
                         backend.writeMulti(unitId, vals);      // addr 5 부터
-                        logTxt += "[WRITE_N] " + vals.join(" ") + "\n";
+                        logTxt += "[WRITE_MULTI] " + vals.join(" ") + "\n";
                     }
 
                     // 카드 내부 레이아웃
